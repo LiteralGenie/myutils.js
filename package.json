@@ -1,0 +1,19 @@
+{
+    "name": "myutils",
+    "version": "0.1.0",
+    "type": "module",
+    "files": [
+        "dist",
+        "src"
+    ],
+    "exports": {
+        ".": {
+            "import": "./dist/myutils.js",
+            "require": "./dist/myutils.cjs",
+            "types": "./src/index.ts"
+        }
+    },
+    "scripts": {
+        "build": "vite build"
+    }
+}
