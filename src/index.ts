@@ -180,6 +180,41 @@ export function sort<T>(
     })
 }
 
+export function alphabetical(xs: string[], desc = false): string[] {
+    const mult = desc ? -1 : 1
+
+    return xs.slice().sort((a, b) => {
+        if (a < b) {
+            return -1 * mult
+        } else if (a == b) {
+            return 0
+        } else {
+            return 1 * mult
+        }
+    })
+}
+
+export function alphabeticalBy<T>(
+    xs: T[],
+    getValue: (x: T) => string,
+    desc = false,
+): T[] {
+    const mult = desc ? -1 : 1
+
+    return xs.slice().sort((a, b) => {
+        const va = getValue(a)
+        const vb = getValue(b)
+
+        if (va < vb) {
+            return -1 * mult
+        } else if (va == vb) {
+            return 0
+        } else {
+            return 1 * mult
+        }
+    })
+}
+
 export function topK<T>(opts: {
     xs: T[]
     k: number
@@ -254,6 +289,18 @@ export function groupBy<T, TKey>(
     }
 
     return groups
+}
+
+export function sortByGroup<T, TKey = string>(
+    xs: T[],
+    getGroupKey: (x: T) => TKey,
+    sortKeys: (ks: TKey[]) => TKey[],
+    sortGroup: (k: TKey, xs: T[]) => T[],
+): T[] {
+    const groups = groupBy(xs, getGroupKey)
+    const keys = sortKeys([...groups.keys()])
+    const result = keys.flatMap((k) => sortGroup(k, groups.get(k)!))
+    return result
 }
 
 export type InferMapKey<T extends Map<any, any>> =
