@@ -1,10 +1,46 @@
+export function split<T, TPass extends T = T, TFail extends T = T>(
+    xs: T[],
+    condition: (x: T) => boolean,
+): [TPass[], TFail[]] {
+    const pass = [] as TPass[]
+    const fail = [] as TFail[]
+
+    for (let x of xs) {
+        if (condition(x)) {
+            pass.push(x as TPass)
+        } else {
+            fail.push(x as TFail)
+        }
+    }
+
+    return [pass, fail]
+}
+
+export function splitMap<T, TPass = T, TFail = T>(
+    xs: T[],
+    fn: (
+        x: T,
+    ) => { type: "pass"; value: TPass } | { type: "fail"; value: TFail },
+): [TPass[], TFail[]] {
+    const pass = [] as TPass[]
+    const fail = [] as TFail[]
+
+    for (let x of xs) {
+        const mapped = fn(x)
+
+        if (mapped.type === "pass") {
+            pass.push(mapped.value)
+        } else {
+            fail.push(mapped.value)
+        }
+    }
+
+    return [pass, fail]
+}
+
 // radash range(1, 0) yields [0] instead of []
 // https://github.com/sodiray/radash/pull/463
-export function range(
-    a: number,
-    b?: number,
-    step?: number,
-): number[] {
+export function range(a: number, b?: number, step?: number): number[] {
     let start, end
     if (b !== undefined) {
         start = a
@@ -24,7 +60,34 @@ export function range(
     return xs
 }
 
-export function createRng(seed = '') {
+export interface SleepUntilOpts {
+    check: () => boolean
+    tries?: number
+    delay?: number
+}
+
+/** Defaults to 60 tries @ 50ms = 3s retry period */
+export async function sleepUntil(opts: SleepUntilOpts) {
+    const n = opts?.tries ?? 60
+    for (let _ of range(n - 1)) {
+        const value = opts.check()
+        if (value) {
+            return true
+        }
+
+        await sleep(opts.delay ?? 50)
+    }
+
+    return false
+}
+
+export async function sleep(timeMs: number) {
+    return new Promise((resolve) => {
+        setTimeout(() => resolve(null), timeMs)
+    })
+}
+
+export function createRng(seed = "") {
     function hashString(seed: string) {
         let h = 2166136261
         for (let i = 0; i < seed.length; i++) {
@@ -46,9 +109,7 @@ export function createRng(seed = '') {
     return mulberry32(hashString(seed))
 }
 
-export type Fn<TArgs extends Array<any>, TReturn> = (
-    ...args: TArgs
-) => TReturn
+export type Fn<TArgs extends Array<any>, TReturn> = (...args: TArgs) => TReturn
 
 export interface ThrottleOpts<TArgs extends Array<any>, TReturn> {
     fn: Fn<TArgs, TReturn>
@@ -87,7 +148,7 @@ export function inIvl(x: number, a: number, b: number) {
 
 export function forceTrack(x: any, shallow = false) {
     switch (typeof x) {
-        case 'object':
+        case "object":
             if (x !== null && !shallow) {
                 entries(x).forEach((kv) => {
                     forceTrack(x[kv[0]])
@@ -101,14 +162,10 @@ export function forceTrack(x: any, shallow = false) {
     // https://github.com/sveltejs/svelte/issues/13547
     function entries(instance: Object) {
         return Object.entries(
-            Object.getOwnPropertyDescriptors(
-                Reflect.getPrototypeOf(instance),
-            ),
+            Object.getOwnPropertyDescriptors(Reflect.getPrototypeOf(instance)),
         )
             .filter(
-                (e) =>
-                    typeof e[1].get === 'function' &&
-                    e[0] !== '__proto__',
+                (e) => typeof e[1].get === "function" && e[0] !== "__proto__",
             )
             .map((e) => e)
             .concat(Object.entries(instance))
@@ -137,10 +194,10 @@ export function attachDoubleClickListener(
     } | null
 
     function wrapper(el: HTMLElement) {
-        el.addEventListener('mousedown', onClick)
+        el.addEventListener("mousedown", onClick)
 
         return () => {
-            el.removeEventListener('mousedown', onClick)
+            el.removeEventListener("mousedown", onClick)
         }
 
         function onClick(ev: MouseEvent) {
@@ -169,11 +226,7 @@ export function enumerate<T>(xs: T[]): Array<[number, T]> {
     return xs.map((x, i) => [i, x])
 }
 
-export function sort<T>(
-    xs: T[],
-    value: (x: T) => number,
-    desc = false,
-): T[] {
+export function sort<T>(xs: T[], value: (x: T) => number, desc = false): T[] {
     return xs.slice().sort((a, b) => {
         const diff = value(a) - value(b)
         return desc ? -diff : diff
@@ -368,12 +421,11 @@ export class IdPool {
     }
 }
 
-export type ValueOf<T> =
-    T extends Record<infer K, infer V> ? V : T[keyof T]
+export type ValueOf<T> = T extends Record<infer K, infer V> ? V : T[keyof T]
 
 export function shallowCopy<T = any>(x: T): T {
     // Primitive
-    if (x === null || typeof x !== 'object') {
+    if (x === null || typeof x !== "object") {
         return x
     }
 
@@ -399,13 +451,11 @@ export function shallowCopy<T = any>(x: T): T {
     }
 
     // Class
-    if (typeof x === 'object') {
+    if (typeof x === "object") {
         return Object.assign(Object.create(proto), x)
     }
 
-    throw new TypeError(
-        `unsupported type ${Object.prototype.toString.call(x)}`,
-    )
+    throw new TypeError(`unsupported type ${Object.prototype.toString.call(x)}`)
 }
 
 export type Lens<T> = {
@@ -428,7 +478,7 @@ export function lens<T, K extends keyof T>(
 ): PropLens<T, K> {
     let currProp = prop
 
-    if (typeof parent === 'function') {
+    if (typeof parent === "function") {
         const _parent = parent as () => T
         return {
             parent: _parent,
@@ -437,10 +487,7 @@ export function lens<T, K extends keyof T>(
                 _parent()[currProp] = value
             },
             delete: () => delete _parent()[currProp],
-            replaceProp<K2 extends keyof T>(
-                prop2: K2,
-                inplace = false,
-            ) {
+            replaceProp<K2 extends keyof T>(prop2: K2, inplace = false) {
                 if (inplace) {
                     currProp = prop2 as any
                     return this as unknown as PropLens<T, K2>
@@ -457,10 +504,7 @@ export function lens<T, K extends keyof T>(
                 parent[currProp] = value
             },
             delete: () => delete parent[currProp],
-            replaceProp<K2 extends keyof T>(
-                prop2: K2,
-                inplace = false,
-            ) {
+            replaceProp<K2 extends keyof T>(prop2: K2, inplace = false) {
                 if (inplace) {
                     currProp = prop2 as any
                     return this as unknown as PropLens<T, K2>
@@ -473,9 +517,7 @@ export function lens<T, K extends keyof T>(
 }
 
 export function cn(...classes: Array<string | null | undefined>) {
-    return classes
-        .filter((cls) => cls !== null && cls !== undefined)
-        .join(' ')
+    return classes.filter((cls) => cls !== null && cls !== undefined).join(" ")
 }
 
 export function on<T extends EventTarget, TK extends string>(
@@ -495,3 +537,335 @@ export function on<T extends EventTarget, TK extends string>(
 // ): PropLens<T[K1], K2> {
 //     return lens(target.get, prop)
 // }
+
+export function uuidWithFallback() {
+    let randomUUID
+    if (window?.crypto?.randomUUID !== undefined) {
+        randomUUID = () => window.crypto.randomUUID()
+    } else {
+        const now = new Date().toISOString()
+        const n = Math.random().toString()
+        randomUUID = () => `${now}_${n}`
+    }
+
+    return randomUUID()
+}
+
+// prettier-ignore
+export type InferGuardType<T> = 
+    T extends (x: any) => x is infer V ? V : never
+
+export type Or<A, B> = A extends never ? B : A
+
+export function findNext<
+    TItem,
+    TCond extends (x: TItem, idx: number) => boolean = (x: TItem) => boolean,
+>(
+    xs: TItem[],
+    cond: TCond,
+    opts: {
+        reverse?: boolean
+        start?: number
+        end?: number
+        breakOn?: (x: TItem) => boolean
+    } = {},
+): [Or<InferGuardType<TCond>, TItem>, number] | [null, null] {
+    const reverse = opts.reverse ?? false
+
+    let start, end, step
+    if (reverse) {
+        start = opts.start ?? xs.length - 1
+        end = opts.end ?? 0
+        step = -1
+    } else {
+        start = opts.start ?? 0
+        end = opts.end ?? xs.length - 1
+        step = 1
+    }
+
+    for (let idx = start; reverse ? idx >= end : idx <= end; idx += step) {
+        const x = xs[idx]
+
+        if (cond(x, idx)) {
+            return [x as any, idx]
+        } else if (opts?.breakOn?.(x)) {
+            return [null, null]
+        }
+    }
+
+    return [null, null]
+}
+
+export interface SortByCriteria<TItem = any> {
+    fn: (x: TItem) => number | string
+    reverse?: boolean
+}
+export function sortBy<TItem = any>(
+    xs: TItem[],
+    criteria: SortByCriteria<TItem>[],
+): TItem[] {
+    const mapped = xs.map((x) => ({
+        x,
+        value: criteria.map((crit) => crit.fn(x)),
+    }))
+
+    const sorted = mapped.sort((a, b) => {
+        for (const [aa, bb, crit] of zip(a.value, b.value, criteria)) {
+            // prettier-ignore
+            const diff =
+                aa < bb ? -1 :
+                aa > bb ? 1 :
+                0
+            if (diff === 0) {
+                continue
+            }
+
+            const mult = crit.reverse ? -1 : 1
+            return diff * mult
+        }
+
+        return 0
+    })
+
+    return sorted.map((x) => x.x)
+}
+
+export function zip<T extends unknown[][]>(
+    ...arrs: T
+): { [K in keyof T]: T[K] extends (infer U)[] ? U : never }[] {
+    const { result, minLength, maxLength } = _zip(arrs)
+
+    if (minLength !== maxLength) {
+        throw new Error(
+            `Cannot zip arrays of mismatched length when truncate=false (${minLength}~${maxLength})`,
+        )
+    }
+
+    return result
+}
+
+export function zipLax<T extends unknown[][]>(
+    ...arrs: T
+): { [K in keyof T]: T[K] extends (infer U)[] ? U : never }[] {
+    const { result } = _zip(arrs)
+    return result
+}
+
+function _zip(arrs: any[][]) {
+    if (!arrs.length) {
+        throw new Error("Cannot zip empty array of arrays")
+    }
+
+    let minLength = arrs[0].length
+    let maxLength = arrs[0].length
+    for (const xs of arrs) {
+        minLength = Math.min(minLength, xs.length)
+        maxLength = Math.max(maxLength, xs.length)
+    }
+
+    if (minLength !== maxLength) {
+        throw new Error(
+            `Cannot zip arrays of mismatched length when truncate=false (${minLength}~${maxLength})`,
+        )
+    }
+
+    const result = range(0, minLength - 1).map((idx) =>
+        arrs.map((xs) => xs[idx]),
+    ) as any
+
+    return { result, minLength, maxLength }
+}
+
+export function formatNumber(x: number, alwaysShowSign?: boolean) {
+    // prettier-ignore
+    const sgn =
+        x < 0 ? "-" :
+        alwaysShowSign ? "+" :
+        ""
+
+    const digits = [...Math.trunc(Math.abs(x)).toString()]
+        .reverse()
+        .reduce((acc, digit, idx) => {
+            if (idx % 3 === 0 && idx > 0) {
+                acc.push(",")
+            }
+
+            acc.push(digit)
+
+            return acc
+        }, [] as string[])
+
+    return sgn + digits.reverse().join("")
+}
+
+export function takeWhile<
+    TItem,
+    TCond extends (x: TItem, idx: number) => boolean = (x: TItem) => boolean,
+>(
+    xs: TItem[],
+    cond: TCond,
+    opts: {
+        reverse?: boolean
+        start?: number
+        end?: number
+    } = {},
+): Array<Or<InferGuardType<TCond>, TItem>> {
+    const reverse = opts.reverse ?? false
+
+    let start, end, step
+    if (reverse) {
+        start = opts.start ?? xs.length - 1
+        end = opts.end ?? 0
+        step = -1
+    } else {
+        start = opts.start ?? 0
+        end = opts.end ?? xs.length - 1
+        step = 1
+    }
+
+    const items: any[] = []
+
+    for (let idx = start; reverse ? idx >= end : idx <= end; idx += step) {
+        const x = xs[idx]
+
+        if (cond(x, idx)) {
+            items.push(x)
+        } else {
+            break
+        }
+    }
+
+    return items
+}
+
+export function setDefault<
+    TKey extends string | number | symbol,
+    TRecord extends Record<TKey, any>,
+>(record: TRecord, key: TKey, value: TRecord[TKey]): TRecord[TKey] {
+    record[key] = record[key] ?? value
+    return record[key]
+}
+
+export function sum(xs: number[]) {
+    return xs.reduce((acc, x) => acc + x, 0)
+}
+
+export function avg(xs: number[]) {
+    if (xs.length === 0) {
+        return 0
+    }
+
+    return sum(xs) / xs.length
+}
+
+export function indexes(xs: any[]): number[] {
+    return [...range(xs.length - 1)]
+}
+
+export async function compressGzip(text: string): Promise<Array<Uint8Array>> {
+    const asBytes = new TextEncoder().encode(text)
+    const asStream = new ReadableStream({
+        start(controller) {
+            controller.enqueue(asBytes)
+            controller.close()
+        },
+    })
+        .pipeThrough(new CompressionStream("gzip"))
+        .getReader()
+
+    const asCompressed: Array<Uint8Array> = []
+    while (true) {
+        const { done, value } = (await asStream.read()) as {
+            done: boolean
+            value: Uint8Array
+        }
+
+        if (done) {
+            break
+        } else {
+            asCompressed.push(value)
+        }
+    }
+
+    return asCompressed
+}
+
+export async function decompressGzip(
+    data: Array<Uint8Array> | Array<ArrayBuffer>,
+): Promise<string> {
+    const asStream = new ReadableStream({
+        start(controller) {
+            for (const arr of data) {
+                controller.enqueue(arr)
+            }
+            controller.close()
+        },
+    })
+        .pipeThrough(new DecompressionStream("gzip"))
+        .getReader()
+
+    let parts: string[] = []
+    const decoder = new TextDecoder()
+    while (true) {
+        const { done, value } = (await asStream.read()) as {
+            done: boolean
+            value: Uint8Array
+        }
+        if (done) {
+            break
+        } else {
+            parts.push(decoder.decode(value, { stream: true }))
+        }
+    }
+
+    parts.push(decoder.decode())
+    return parts.join("")
+}
+
+export async function consumeAsync<T = any>(
+    iter: AsyncGenerator<T>,
+): Promise<T[]> {
+    const result: T[] = []
+    for await (const x of iter) {
+        result.push(x)
+    }
+    return result
+}
+
+export function concatArrays(xs: Uint8Array[]) {
+    const totalSize = sum(xs.map((x) => x.length))
+    const total = new Uint8Array(totalSize)
+
+    let start = 0
+    for (const arr of xs) {
+        total.set(arr, start)
+        start += arr.length
+    }
+
+    return total
+}
+
+export function last<T>(xs: T[]): T | undefined {
+    return xs[xs.length - 1]
+}
+
+export function mapEntries<
+    TOut extends Record<string, any> = Record<string, unknown>,
+    TIn extends Record<string, any> | Map<string, any> = Record<
+        string,
+        unknown
+    >,
+>(
+    x: TIn,
+    mapping: TIn extends Map<infer K, infer V>
+        ? (k: K, v: V) => Partial<TOut>
+        : <K extends keyof TIn>(k: K, v: TIn[K]) => Partial<TOut>,
+): TOut {
+    const result = {} as TOut
+
+    const entries = x instanceof Map ? [...x.entries()] : Object.entries(x)
+    for (const entry of entries) {
+        Object.assign(result, mapping(entry[0] as any, entry[1]))
+    }
+    return result
+}

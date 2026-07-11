@@ -1,2 +1,1 @@
-export * from './miscUtils'
-export * from './canvasUtils'
+export * from "./miscUtils"
