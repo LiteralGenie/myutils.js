@@ -669,7 +669,7 @@ function _zip(arrs: any[][]) {
         )
     }
 
-    const result = range(0, minLength - 1).map((idx) =>
+    const result = range(minLength).map((idx) =>
         arrs.map((xs) => xs[idx]),
     ) as any
 
