@@ -1,15 +1,15 @@
-import { on, range, sort, type Guard, type Unsub } from './miscUtils'
+import { on, range, sort } from "./miscUtils"
+import { type Guard } from "./typeUtils"
+import { type Unsub } from "./typeUtils"
 
 export type Point2 = [number, number]
 
 export type MiniMouseEvent = Pick<
     MouseEvent,
-    'button' | 'clientX' | 'clientY' | 'offsetX' | 'offsetY'
+    "button" | "clientX" | "clientY" | "offsetX" | "offsetY"
 >
 export type SaneExclude<TCtx, TCancel> =
-    Exclude<TCtx, TCancel> extends never
-        ? TCtx
-        : Exclude<TCtx, TCancel>
+    Exclude<TCtx, TCancel> extends never ? TCtx : Exclude<TCtx, TCancel>
 
 export interface ListenDragOptions<TCtx, TCancel> {
     el: HTMLElement
@@ -18,10 +18,7 @@ export interface ListenDragOptions<TCtx, TCancel> {
         ev: MiniMouseEvent,
         ctx: SaneExclude<TCtx, TCancel>,
     ) => SaneExclude<TCtx, TCancel>
-    onEnd: (
-        ev: MiniMouseEvent,
-        ctx: SaneExclude<TCtx, TCancel>,
-    ) => void
+    onEnd: (ev: MiniMouseEvent, ctx: SaneExclude<TCtx, TCancel>) => void
     startGuard?: Guard<TCancel, TCtx>
     disableSelect?: boolean
 }
@@ -34,7 +31,7 @@ export function listenDrag<TCancel = never, TCtx = unknown>(
         const dragCtx = opts.onStart(ev) as SaneExclude<TCtx, TCancel>
 
         if (opts.disableSelect) {
-            document.body.classList.add('no-select')
+            document.body.classList.add("no-select")
         }
 
         const guard = opts.startGuard
@@ -49,7 +46,7 @@ export function listenDrag<TCancel = never, TCtx = unknown>(
         }
 
         const onEnd = (ev: MiniMouseEvent) => {
-            document.body.classList.remove('no-select')
+            document.body.classList.remove("no-select")
 
             opts.onEnd(ev, dragCtx)
 
@@ -60,8 +57,8 @@ export function listenDrag<TCancel = never, TCtx = unknown>(
         }
         currOnEnd = onEnd
 
-        const unsubMousemove = on(window, 'mousemove', onMove)
-        const unsubMouseup = on(window, 'mouseup', onEnd)
+        const unsubMousemove = on(window, "mousemove", onMove)
+        const unsubMouseup = on(window, "mouseup", onEnd)
     }
 
     let lastMove: MiniMouseEvent = {
@@ -75,8 +72,8 @@ export function listenDrag<TCancel = never, TCtx = unknown>(
         lastMove = ev
     }
 
-    const unsubMousedown = on(opts.el, 'mousedown', onMouseDown)
-    const unsubMousemove = on(opts.el, 'mousemove', onMouseMove)
+    const unsubMousedown = on(opts.el, "mousedown", onMouseDown)
+    const unsubMousemove = on(opts.el, "mousemove", onMouseMove)
 
     const forceStart = () => {
         onMouseDown(lastMove)
@@ -106,10 +103,7 @@ export interface DragPositionContext {
 export type ListenPositionDragOptions<TCtx, TCancel> = {
     el: HTMLElement
     startGuard?: Guard<TCancel>
-    onStart: (
-        ev: MiniMouseEvent,
-        pos: DragPositionContext,
-    ) => TCtx | TCancel
+    onStart: (ev: MiniMouseEvent, pos: DragPositionContext) => TCtx | TCancel
     onMove: (
         ev: MiniMouseEvent,
         pos: DragPositionContext,
@@ -176,11 +170,9 @@ export function listenPositionDrag<TCancel = never, TCtx = unknown>(
 
 // https://stackoverflow.com/questions/41139763/how-to-declare-a-fixed-length-array-in-typescript
 type Tuple<N extends number, T = any> = GrowToSize<T, N, []>
-type GrowToSize<
-    T,
-    N extends number,
-    A extends T[],
-> = A['length'] extends N ? A : GrowToSize<T, N, [...A, T]>
+type GrowToSize<T, N extends number, A extends T[]> = A["length"] extends N
+    ? A
+    : GrowToSize<T, N, [...A, T]>
 type TupleLength<T = any> = T extends { length: infer N } ? N : never
 
 export function map2<const T extends Readonly<Point2>[]>(
@@ -189,36 +181,21 @@ export function map2<const T extends Readonly<Point2>[]>(
 ): Point2 {
     const n = 2
     return range(n).map((i) => {
-        const args = pts.map((pt) => pt[i]) as Tuple<
-            TupleLength<T>,
-            number
-        >
+        const args = pts.map((pt) => pt[i]) as Tuple<TupleLength<T>, number>
         return fn(...args)
     }) as Point2
 }
 
-export function add2(
-    a: Readonly<Point2>,
-    b: Readonly<Point2>,
-): Point2 {
+export function add2(a: Readonly<Point2>, b: Readonly<Point2>): Point2 {
     return map2([a, b], (a, b) => a + b)
 }
-export function sub2(
-    a: Readonly<Point2>,
-    b: Readonly<Point2>,
-): Point2 {
+export function sub2(a: Readonly<Point2>, b: Readonly<Point2>): Point2 {
     return map2([a, b], (a, b) => a - b)
 }
-export function mult2(
-    a: Readonly<Point2>,
-    b: Readonly<Point2>,
-): Point2 {
+export function mult2(a: Readonly<Point2>, b: Readonly<Point2>): Point2 {
     return map2([a, b], (a, b) => a * b)
 }
-export function div2(
-    a: Readonly<Point2>,
-    b: Readonly<Point2>,
-): Point2 {
+export function div2(a: Readonly<Point2>, b: Readonly<Point2>): Point2 {
     return map2([a, b], (a, b) => a / b)
 }
 export function round2(pt: Point2): Point2 {
@@ -246,17 +223,13 @@ export function drawLine(opts: {
     const ctx = opts.ctx
     const {
         stroke: {
-            color: sc = '#ffffff',
-            opacity: so = 'ff',
+            color: sc = "#ffffff",
+            opacity: so = "ff",
             width: sw = 3,
         } = {},
     } = opts
     const {
-        fill: {
-            color: fc = '#ffffff',
-            opacity: fo = 'ff',
-            width: fw = 3,
-        } = {},
+        fill: { color: fc = "#ffffff", opacity: fo = "ff", width: fw = 3 } = {},
     } = opts
 
     ctx.beginPath()
@@ -274,9 +247,7 @@ export function drawLine(opts: {
     ctx.closePath()
 }
 
-export function getCanvasCtx<
-    T extends HTMLCanvasElement | OffscreenCanvas,
->(
+export function getCanvasCtx<T extends HTMLCanvasElement | OffscreenCanvas>(
     canvasEl: T,
     opts?: {
         clear?: boolean
@@ -284,9 +255,7 @@ export function getCanvasCtx<
 ): T extends HTMLCanvasElement
     ? CanvasRenderingContext2D
     : OffscreenCanvasRenderingContext2D {
-    const ctx = canvasEl.getContext('2d')! as ReturnType<
-        typeof getCanvasCtx
-    >
+    const ctx = canvasEl.getContext("2d")! as ReturnType<typeof getCanvasCtx>
 
     ctx.imageSmoothingEnabled = false
 
@@ -309,16 +278,14 @@ export function checkOverlap(
     b: typeof a,
 ): boolean {
     const a0 = a.p0
-    const a1 = 'p1' in a ? a.p1 : add2(a0, a.wh)
+    const a1 = "p1" in a ? a.p1 : add2(a0, a.wh)
     const b0 = b.p0
-    const b1 = 'p1' in b ? b.p1 : add2(b0, b.wh)
+    const b1 = "p1" in b ? b.p1 : add2(b0, b.wh)
 
     const [ax0, ax1] = sort([a0[0], a1[0]], (u) => u)
     const [ay0, ay1] = sort([a0[1], a1[1]], (u) => u)
     const [bx0, bx1] = sort([b0[0], b1[0]], (u) => u)
     const [by0, by1] = sort([b0[1], b1[1]], (u) => u)
 
-    return (
-        true && ax0 <= bx1 && ax1 >= bx0 && ay0 <= by1 && ay1 >= by0
-    )
+    return true && ax0 <= bx1 && ax1 >= bx0 && ay0 <= by1 && ay1 >= by0
 }

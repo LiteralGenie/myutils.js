@@ -1,3 +1,5 @@
+import { Fn, InferGuardType, Or, Unsub } from "./typeUtils"
+
 export function split<T, TPass extends T = T, TFail extends T = T>(
     xs: T[],
     condition: (x: T) => boolean,
@@ -109,8 +111,6 @@ export function createRng(seed = "") {
     return mulberry32(hashString(seed))
 }
 
-export type Fn<TArgs extends Array<any>, TReturn> = (...args: TArgs) => TReturn
-
 export interface ThrottleOpts<TArgs extends Array<any>, TReturn> {
     fn: Fn<TArgs, TReturn>
     interval: number
@@ -220,8 +220,6 @@ export function attachDoubleClickListener(
     return wrapper
 }
 
-export type Unsub = () => void
-
 export function enumerate<T>(xs: T[]): Array<[number, T]> {
     return xs.map((x, i) => [i, x])
 }
@@ -323,8 +321,6 @@ export function topK<T>(opts: {
     }
 }
 
-export type Guard<T, TOther = unknown> = (ctx: T | TOther) => ctx is T
-
 export function groupBy<T, TKey>(
     xs: T[],
     getId: (x: T) => TKey,
@@ -355,11 +351,6 @@ export function sortByGroup<T, TKey = string>(
     const result = keys.flatMap((k) => sortGroup(k, groups.get(k)!))
     return result
 }
-
-export type InferMapKey<T extends Map<any, any>> =
-    T extends Map<infer K, any> ? K : never
-export type InferMapValue<T extends Map<any, any>> =
-    T extends Map<any, infer V> ? V : never
 
 type PoolId = number
 export class IdPool {
@@ -420,8 +411,6 @@ export class IdPool {
         }
     }
 }
-
-export type ValueOf<T> = T extends Record<infer K, infer V> ? V : T[keyof T]
 
 export function shallowCopy<T = any>(x: T): T {
     // Primitive
@@ -551,12 +540,6 @@ export function uuidWithFallback() {
     return randomUUID()
 }
 
-// prettier-ignore
-export type InferGuardType<T> = 
-    T extends (x: any) => x is infer V ? V : never
-
-export type Or<A, B> = A extends never ? B : A
-
 export function findNext<
     TItem,
     TCond extends (x: TItem, idx: number) => boolean = (x: TItem) => boolean,
@@ -676,27 +659,27 @@ function _zip(arrs: any[][]) {
     return { result, minLength, maxLength }
 }
 
-export function formatNumber(x: number, alwaysShowSign?: boolean) {
-    // prettier-ignore
-    const sgn =
-        x < 0 ? "-" :
-        alwaysShowSign ? "+" :
-        ""
+// export function formatNumber(x: number, alwaysShowSign?: boolean) {
+//     // prettier-ignore
+//     const sgn =
+//         x < 0 ? "-" :
+//         alwaysShowSign ? "+" :
+//         ""
 
-    const digits = [...Math.trunc(Math.abs(x)).toString()]
-        .reverse()
-        .reduce((acc, digit, idx) => {
-            if (idx % 3 === 0 && idx > 0) {
-                acc.push(",")
-            }
+//     const digits = [...Math.trunc(Math.abs(x)).toString()]
+//         .reverse()
+//         .reduce((acc, digit, idx) => {
+//             if (idx % 3 === 0 && idx > 0) {
+//                 acc.push(",")
+//             }
 
-            acc.push(digit)
+//             acc.push(digit)
 
-            return acc
-        }, [] as string[])
+//             return acc
+//         }, [] as string[])
 
-    return sgn + digits.reverse().join("")
-}
+//     return sgn + digits.reverse().join("")
+// }
 
 export function takeWhile<
     TItem,
@@ -830,19 +813,6 @@ export async function consumeAsync<T = any>(
         result.push(x)
     }
     return result
-}
-
-export function concatArrays(xs: Uint8Array[]) {
-    const totalSize = sum(xs.map((x) => x.length))
-    const total = new Uint8Array(totalSize)
-
-    let start = 0
-    for (const arr of xs) {
-        total.set(arr, start)
-        start += arr.length
-    }
-
-    return total
 }
 
 export function last<T>(xs: T[]): T | undefined {
