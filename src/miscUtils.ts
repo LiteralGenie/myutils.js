@@ -71,7 +71,7 @@ export interface SleepUntilOpts {
 /** Defaults to 60 tries @ 50ms = 3s retry period */
 export async function sleepUntil(opts: SleepUntilOpts) {
     const n = opts?.tries ?? 60
-    for (let _ of range(n - 1)) {
+    for (let _ of range(n)) {
         const value = opts.check()
         if (value) {
             return true
@@ -742,7 +742,7 @@ export function avg(xs: number[]) {
 }
 
 export function indexes(xs: any[]): number[] {
-    return [...range(xs.length - 1)]
+    return [...range(xs.length)]
 }
 
 export async function compressGzip(text: string): Promise<Array<Uint8Array>> {
